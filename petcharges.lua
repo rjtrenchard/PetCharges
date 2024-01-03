@@ -28,7 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 _addon.name = 'PetCharges'
-_addon.author = 'Sammeh,rjt'
+_addon.author = 'Sammeh, rjt'
 _addon.version = '1.8'
 _addon.command = 'petcharges'
 
