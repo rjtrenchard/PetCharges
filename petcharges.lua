@@ -95,7 +95,7 @@ function move_textbox()
         windower.unregister_event(mouse_evt)
         mouse_evt = nil
     else
-        windower.add_to_chat(144, "Move the mouse to change the location of PetCharges, left click to set the position")
+        windower.add_to_chat(144, "PetCharges: Move the mouse to change the location of PetCharges, click to set the position.")
         -- register a new mouse event
         -- this will take over the mouse until mouse1 is clicked down
         mouse_evt = windower.register_event('mouse', function(type, x, y, delta, blocked)
@@ -107,6 +107,8 @@ function move_textbox()
                     abilities_list:pos(x, y)
                 end
             elseif type == 1 then
+
+                windower.add_to_chat(144, 'PetCharges: New textbox position set.')
                 -- on mouse1 down, end movement and save the location. kill this event
                 if settings.flags.right then
                     settings.pos.x = x - windower.get_windower_settings().ui_x_res
