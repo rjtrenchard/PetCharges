@@ -132,7 +132,7 @@ windower.register_event('prerender', function()
         if self.main_job == 'BST' then
             duration = windower.ffxi.get_ability_recasts()[102]
             if duration then
-                chargebase = (30 - merits - jobpoints - equip_reduction)
+                chargebase = (30 - (merits or 0) * 2 - jobpoints - equip_reduction)
                 charges = math.floor(((chargebase * 3) - duration) / chargebase)
                 next_ready_recast = math.fmod(duration, chargebase)
                 display_abilities()
