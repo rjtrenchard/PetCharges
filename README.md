@@ -10,13 +10,16 @@ Monster abilities will show in numbered order of their `/bstpet [n]` command
 | --- | --- |
 | save | Saves the addon
 | move | Allows moving of the addon through the mouse. |
+| killer | Toggles display of killer trait |
+| timer | Toggles display of the recharge timer |
+| bstpet | Toggles display of the numbers before abilities |
 
 ### Author
 * Original work by Sammeh
 * Customized by rjt
 
 ### Version
-1.8
+1.9
 
-2024/01/03
+2024/01/15
 
