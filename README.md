@@ -1,5 +1,7 @@
 # PetCharges
 
+![Preview of PetCharges](/img/preview.png)
+
 This is a helper addon to show Pet Ready Charges and countdowns.
 
 Monster abilities will show in numbered order of their `/bstpet [n]` command
