@@ -240,7 +240,14 @@ windower.register_event('addon command', function(command)
     elseif command == 'move' then
         move_textbox()
     elseif command == 'killer' then
-
+        settings.options.show_killer_effect = not settings.options.show_killer_effect
+        config.save(settings, 'all')
+    elseif command == 'timer' then
+        settings.options.show_timer = not settings.options.show_timer
+        config.save(settings, 'all')
+    elseif command == 'bstpet' then
+        settings.options.show_bstpet_number = not settings.options.show_bstpet_number
+        config.save(settings, 'all')
     end
 end)
 
