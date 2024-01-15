@@ -29,7 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 _addon.name = 'PetCharges'
 _addon.author = 'Sammeh, rjt'
-_addon.version = '1.8'
+_addon.version = '1.9'
 _addon.command = 'petcharges'
 
 config = require('config')
@@ -37,23 +37,32 @@ texts = require('texts')
 res = require('resources')
 packets = require('packets')
 
+require('mob_families')
 
 
+defaults = {}
+defaults.options = {}
+defaults.options.show_killer_effect = true
+defaults.options.show_timer = true
+defaults.options.show_bstpet_number = true
+defaults.abilitytxt = {}
+defaults.abilitytxt.bg = { alpha = 50 }
+defaults.abilitytxt.pos = {}
+defaults.abilitytxt.pos.x = -80
+defaults.abilitytxt.pos.y = 45
+defaults.abilitytxt.text = {}
+defaults.abilitytxt.text.font = 'arial'
+defaults.abilitytxt.text.size = 10
+defaults.abilitytxt.text.stroke = { width = 1, alpha = 155, red = 0, green = 0, blue = 0 }
+defaults.abilitytxt.padding = 4
+defaults.abilitytxt.flags = {}
+defaults.abilitytxt.flags.bold = false
+defaults.abilitytxt.flags.right = true
 
-abilitytxt = {}
-abilitytxt.pos = {}
-abilitytxt.pos.x = -80
-abilitytxt.pos.y = 45
-abilitytxt.text = {}
-abilitytxt.text.font = 'Arial'
-abilitytxt.text.size = 10
-abilitytxt.flags = {}
-abilitytxt.flags.right = true
 
-settings = config.load(abilitytxt)
-abilities_list = texts.new('${value}', settings)
-showabilities = true
-
+settings = config.load(defaults)
+abilities_list = texts.new('${value}', settings.abilitytxt)
+pet_abilities = ""
 equip_reduction = 0
 
 
@@ -61,26 +70,20 @@ function display_abilities()
     if pet then
         local list = "Charges: " .. charges
         -- add recharge timer if charges is not full
-        if next_ready_recast > 0 and charges < 3 then
-            list = list .. " [" .. string.format("%.1f", next_ready_recast) .. "s]"
+        if settings.options.show_timer and next_ready_recast > 0 and charges < 3 then
+            list = list .. " [" .. string.format("%2.1f", next_ready_recast) .. "s]"
         end
         list = list .. ' \n'
 
-        local n = 1
-        for key, ability in pairs(abilitylist) do
-            ability_en = res.job_abilities[ability].en
-            ability_type = res.job_abilities[ability].type
-            ability_targets = res.job_abilities[ability].targets
-            ability_charges = res.job_abilities[ability].mp_cost
-            if ability_targets.Self == true and ability_type == 'Monster' then
-                if charges >= ability_charges then
-                    list = list .. '[' .. n .. ']' .. ' \\cs(0,255,0)' .. ability_en .. '\\cs(255,255,255)' .. ' \n'
-                else
-                    list = list .. '[' .. n .. ']' .. ' \\cs(255,255,255)' .. ability_en .. ' \n'
-                end
-                n = n + 1
+        if settings.options.show_killer_effect then
+            local killer_trait = get_pet_killer_trait(pet.name)
+            if killer_trait then
+                list = list .. killer_trait .. "\n"
             end
         end
+
+        list = list .. pet_abilities
+
         abilities_list.value = list
         abilities_list:visible(true)
     else
@@ -88,6 +91,7 @@ function display_abilities()
     end
 end
 
+-- can probably be removed
 function move_textbox()
     -- check for existing mouse event.
     if mouse_evt then
@@ -127,19 +131,70 @@ function move_textbox()
     end
 end
 
+function update_job_data()
+    self = windower.ffxi.get_player()
+    if self then
+        if self.job_points.bst.jp_spent >= 100 then
+            jobpoints = 5
+        else
+            jobpoints = 0
+        end
+        merits = self.merits.sic_recast
+        pet = windower.ffxi.get_mob_by_target('pet') or nil
+        abilitylist = windower.ffxi.get_abilities().job_abilities
+        build_pet_string()
+        display_abilities()
+    end
+end
+
+function delay_update_job_data()
+    coroutine.sleep(2)
+    update_job_data()
+end
+
+function build_pet_string()
+    pet_abilities = ""
+    update_duration()
+    if pet then
+        local bstpet_number = 1
+        for key, ability in pairs(abilitylist) do
+            ability_en = res.job_abilities[ability].en
+            ability_type = res.job_abilities[ability].type
+            ability_targets = res.job_abilities[ability].targets
+            ability_charges = res.job_abilities[ability].mp_cost
+            local bstpet_prefix = settings.options.show_bstpet_number and string.format("[%d]", bstpet_number) or ""
+            if ability_targets.Self == true and ability_type == 'Monster' then
+                if charges >= ability_charges then
+                    pet_abilities = pet_abilities ..
+                        bstpet_prefix .. ' \\cs(0,255,0)' .. ability_en .. '\\cs(255,255,255)' .. ' \n'
+                else
+                    pet_abilities = pet_abilities .. bstpet_prefix .. ' \\cs(255,255,255)' .. ability_en .. ' \n'
+                end
+                bstpet_number = bstpet_number + 1
+            end
+        end
+    end
+end
+
+function update_duration()
+    duration = windower.ffxi.get_ability_recasts()[102]
+    if duration then
+        chargebase = (30 - ((merits or 0) * 2) - jobpoints - equip_reduction)
+        charges = math.floor(((chargebase * 3) - duration) / chargebase)
+        next_ready_recast = math.fmod(duration, chargebase)
+    else
+        chargebase = 0
+        charges = 0
+        next_ready_recast = 0
+    end
+end
+
 windower.register_event('prerender', function()
     if self and self.main_job == 'BST' then
-        duration = windower.ffxi.get_ability_recasts()[102] or 0
+        update_duration()
         if duration then
-            chargebase = (30 - ((merits or 0) * 2) - jobpoints - equip_reduction)
-            charges = math.floor(((chargebase * 3) - duration) / chargebase)
-            next_ready_recast = math.fmod(duration, chargebase)
-        else
-            chargebase = 0
-            charges = 0
-            next_ready_recast = 0
+            display_abilities()
         end
-        display_abilities()
     end
 end)
 
@@ -173,53 +228,23 @@ windower.register_event('incoming chunk', function(id, data)
         end
         expect_ready_move = false
     elseif id == 0x67 or id == 0x68 then
-        local packet = packets.parse('incoming', data)
-        local msg_type = packet['Message Type']
-        pet_idx = packet['Pet Index']
-        if pet_idx ~= 0 then
-            pet = windower.ffxi.get_mob_by_target('pet') or nil
-            abilitylist = windower.ffxi.get_abilities().job_abilities
-        else
-            pet = nil
-        end
+        update_job_data()
     elseif id == 0x44 then
-        pet = windower.ffxi.get_mob_by_target('pet') or nil
-        abilitylist = windower.ffxi.get_abilities().job_abilities
+        update_job_data()
     end
 end)
-
-function update_job_data()
-    coroutine.sleep(2)
-    self = windower.ffxi.get_player()
-    if self then
-        if self.job_points.bst.jp_spent >= 100 then
-            jobpoints = 5
-        else
-            jobpoints = 0
-        end
-        merits = self.merits.sic_recast
-        pet = windower.ffxi.get_mob_by_target('pet') or nil
-        abilitylist = windower.ffxi.get_abilities().job_abilities
-    end
-end
 
 windower.register_event('addon command', function(command)
     if command == 'save' then
         config.save(settings, 'all')
     elseif command == 'move' then
         move_textbox()
-    elseif command == 'debug' then
-        windower.add_to_chat(144, pet or "nil")
-    end
+    elseif command == 'killer' then
 
-    -- if command == 'jp' then
-    --     for i, v in pairs(self.merits) do
-    --         print(i, v)
-    --     end
-    -- end
+    end
 end)
 
-windower.register_event('load', update_job_data)
-windower.register_event('login', update_job_data)
-windower.register_event('zone change', update_job_data)
+windower.register_event('load', delay_update_job_data)
+windower.register_event('login', delay_update_job_data)
+windower.register_event('zone change', delay_update_job_data)
 windower.register_event('job change', update_job_data)
