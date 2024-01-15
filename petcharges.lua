@@ -95,7 +95,8 @@ function move_textbox()
         windower.unregister_event(mouse_evt)
         mouse_evt = nil
     else
-        windower.add_to_chat(144, "PetCharges: Move the mouse to change the location of PetCharges, click to set the position.")
+        windower.add_to_chat(144,
+            "PetCharges: Move the mouse to change the location of PetCharges, click to set the position.")
         -- register a new mouse event
         -- this will take over the mouse until mouse1 is clicked down
         mouse_evt = windower.register_event('mouse', function(type, x, y, delta, blocked)
@@ -107,7 +108,6 @@ function move_textbox()
                     abilities_list:pos(x, y)
                 end
             elseif type == 1 then
-
                 windower.add_to_chat(144, 'PetCharges: New textbox position set.')
                 -- on mouse1 down, end movement and save the location. kill this event
                 if settings.flags.right then
@@ -128,18 +128,21 @@ function move_textbox()
 end
 
 windower.register_event('prerender', function()
-    if self then
-        if self.main_job == 'BST' then
-            duration = windower.ffxi.get_ability_recasts()[102]
-            if duration then
-                chargebase = (30 - ((merits or 0) * 2) - jobpoints - equip_reduction)
-                charges = math.floor(((chargebase * 3) - duration) / chargebase)
-                next_ready_recast = math.fmod(duration, chargebase)
-                display_abilities()
-            end
+    if self and self.main_job == 'BST' then
+        duration = windower.ffxi.get_ability_recasts()[102] or 0
+        if duration then
+            chargebase = (30 - ((merits or 0) * 2) - jobpoints - equip_reduction)
+            charges = math.floor(((chargebase * 3) - duration) / chargebase)
+            next_ready_recast = math.fmod(duration, chargebase)
+        else
+            chargebase = 0
+            charges = 0
+            next_ready_recast = 0
         end
+        display_abilities()
     end
 end)
+
 
 windower.register_event('outgoing chunk', function(id, data)
     if id == 0x01A then
@@ -169,27 +172,44 @@ windower.register_event('incoming chunk', function(id, data)
             equip_reduction = equip_reduction + 5
         end
         expect_ready_move = false
-    end
-    if id == 0x67 or id == 0x68 then
+    elseif id == 0x67 or id == 0x68 then
         local packet = packets.parse('incoming', data)
         local msg_type = packet['Message Type']
         pet_idx = packet['Pet Index']
-        if pet_idx ~= 0 and msg_type == 0x04 then
-            pet = windower.ffxi.get_mob_by_target('pet')
+        if pet_idx ~= 0 then
+            pet = windower.ffxi.get_mob_by_target('pet') or nil
             abilitylist = windower.ffxi.get_abilities().job_abilities
         else
-            if pet_idx == 0 then
-                pet = nil
-            end
+            pet = nil
         end
+    elseif id == 0x44 then
+        pet = windower.ffxi.get_mob_by_target('pet') or nil
+        abilitylist = windower.ffxi.get_abilities().job_abilities
     end
 end)
+
+function update_job_data()
+    coroutine.sleep(2)
+    self = windower.ffxi.get_player()
+    if self then
+        if self.job_points.bst.jp_spent >= 100 then
+            jobpoints = 5
+        else
+            jobpoints = 0
+        end
+        merits = self.merits.sic_recast
+        pet = windower.ffxi.get_mob_by_target('pet') or nil
+        abilitylist = windower.ffxi.get_abilities().job_abilities
+    end
+end
 
 windower.register_event('addon command', function(command)
     if command == 'save' then
         config.save(settings, 'all')
     elseif command == 'move' then
         move_textbox()
+    elseif command == 'debug' then
+        windower.add_to_chat(144, pet or "nil")
     end
 
     -- if command == 'jp' then
@@ -199,52 +219,7 @@ windower.register_event('addon command', function(command)
     -- end
 end)
 
-windower.register_event('load', function()
-    if windower.ffxi.get_player() then
-        coroutine.sleep(2)
-        self = windower.ffxi.get_player()
-        if self.job_points.bst.jp_spent >= 100 then
-            jobpoints = 5
-        else
-            jobpoints = 0
-        end
-    end
-    merits = self.merits.sic_recast
-end)
-
-windower.register_event('login', function()
-    coroutine.sleep(2)
-    self = windower.ffxi.get_player()
-    if self.job_points.bst.jp_spent >= 100 then
-        jobpoints = 5
-    else
-        jobpoints = 0
-    end
-    merits = self.merits.sic_recast
-end)
-
-windower.register_event('zone change', function(command)
-    coroutine.sleep(2)
-    self = windower.ffxi.get_player()
-    if self.job_points.bst.jp_spent >= 100 then
-        jobpoints = 5
-    else
-        jobpoints = 0
-    end
-    merits = self.merits.sic_recast
-    pet = windower.ffxi.get_mob_by_target('pet')
-    abilitylist = windower.ffxi.get_abilities().job_abilities
-end)
-
-windower.register_event('job change', function(command)
-    coroutine.sleep(2)
-    self = windower.ffxi.get_player()
-    if self.job_points.bst.jp_spent >= 100 then
-        jobpoints = 5
-    else
-        jobpoints = 0
-    end
-    merits = self.merits.sic_recast
-    pet = windower.ffxi.get_mob_by_target('pet')
-    abilitylist = windower.ffxi.get_abilities().job_abilities
-end)
+windower.register_event('load', update_job_data)
+windower.register_event('login', update_job_data)
+windower.register_event('zone change', update_job_data)
+windower.register_event('job change', update_job_data)
