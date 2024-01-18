@@ -79,7 +79,7 @@ function define_jugpet_data()
         ["PorterCrabFamiliar"] = "Crab",
         ["JovialEdwin"] = "Crab",
         ["AttentiveIbuki"] = "Tulfaire",
-        ["SwoopingZhviago"] = "Tulfaire",
+        ["SwoopingZhivago"] = "Tulfaire",
         ["SunburstMalfik"] = "Crab",
         ["AgedAngus"] = "Crab",
         ["ScissorlegXerin"] = "Chapuli",
