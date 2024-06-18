@@ -119,6 +119,7 @@ function define_jugpet_data()
         ["Ladybug"] = "Vermin",
         ["Leech"] = "Amorph",
         ["Raptor"] = "Lizard",
+        ["Lizard"] = "Lizard",
         ["Hippogryph"] = "Bird",
         ["Coeurl"] = "Beast",
         ["Fly"] = "Insect",
