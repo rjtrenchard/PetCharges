@@ -21,7 +21,7 @@ Monster abilities will show in numbered order of their `/bstpet [n]` command
 * Customized by rjt
 
 ### Version
-1.9
+1.9.1
 
-2024/01/15
+2024/06/18
 
