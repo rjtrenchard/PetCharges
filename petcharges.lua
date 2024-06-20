@@ -29,7 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 _addon.name = 'PetCharges'
 _addon.author = 'Sammeh, rjt'
-_addon.version = '1.9'
+_addon.version = '1.9.1'
 _addon.command = 'petcharges'
 
 config = require('config')
@@ -67,7 +67,7 @@ equip_reduction = 0
 
 
 function display_abilities()
-    if pet then
+    if pet and windower.ffxi.get_player().main_job == 'BST' then
         local list = "Charges: " .. charges
         -- add recharge timer if charges is not full
         if settings.options.show_timer and next_ready_recast > 0 and charges < 3 then
