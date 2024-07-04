@@ -134,6 +134,7 @@ function define_jugpet_data()
         ["Colibri"] = "Bird",
         ["Mosquito"] = "Vermin",
         ["Slime"] = "Aquan",
+        ["Fly"] = "Vermin"
     }
 
     monster_family_killer = T {
